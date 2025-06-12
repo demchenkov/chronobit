@@ -1,0 +1,104 @@
+@page
+@model Razor.Areas.Workplaces.Pages.DashboardModel
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "_DashboardLayout";
+}
+
+<div class="container-fluid">
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Welcome to Chronobit</h2>
+            <p class="text-muted">Manage your workplaces and time tracking efficiently</p>
+        </div>
+    </div>
+
+    <!-- Workplace Management Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dashboard-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4>Your Workplaces</h4>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newWorkplaceModal">
+                        <i class="bi bi-plus-circle me-2"></i>Create New Workplace
+                    </button>
+                </div>
+
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                    @foreach (var workplace in Model.Workplaces)
+                    {
+                        <div class="col">
+                            <div class="dashboard-card h-100 p-4">
+                                <h5>@workplace.Name</h5>
+                                <p class="text-muted mb-3">@workplace.Description</p>
+                                <div class="d-grid">
+                                    <a href="#" class="btn btn-outline-primary"
+                                       onclick="selectWorkplace('@workplace.Id', '@workplace.Name')">
+                                        Select Workplace
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Workplace Modal -->
+<div class="modal fade" id="newWorkplaceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Workplace</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label asp-for="NewWorkplace.Name" class="form-label">Workplace Name</label>
+                        <input asp-for="NewWorkplace.Name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="NewWorkplace.Description" class="form-label">Description</label>
+                        <textarea asp-for="NewWorkplace.Description" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Workplace</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function selectWorkplace(id, name) {
+            // Update workplace selector
+            const selector = document.getElementById('workplaceSelector');
+            selector.innerHTML = `<option value="${id}" selected>${name}</option>`;
+
+            // Store selection in localStorage
+            localStorage.setItem('selectedWorkplaceId', id);
+            localStorage.setItem('selectedWorkplaceName', name);
+
+            // You might want to trigger a page reload or update other elements
+            window.location.reload();
+        }
+
+        // On page load, check if there's a selected workplace
+        document.addEventListener('DOMContentLoaded', function() {
+            const workplaceId = localStorage.getItem('selectedWorkplaceId');
+            const workplaceName = localStorage.getItem('selectedWorkplaceName');
+
+            if (workplaceId && workplaceName) {
+                const selector = document.getElementById('workplaceSelector');
+                selector.innerHTML = `<option value="${workplaceId}" selected>${workplaceName}</option>`;
+            }
+        });
+    </script>
+}

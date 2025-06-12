@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>aspnet-Razor-f98cdebe-9b65-4e49-8dfe-ff00e0ab7173</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Update="app.db" CopyToOutputDirectory="PreserveNewest" ExcludeFromSingleFile="true"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="9.0.5"/>
+        <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.5"/>
+        <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="9.0.5"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.5"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.5"/>
+        <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Areas\Workplaces\Pages\Create.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Workplaces\Pages\Delete.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Workplaces\Pages\Details.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Workplaces\Pages\Edit.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Workplaces\Pages\Index.cshtml" />
+      <_ContentIncludedByDefault Remove="Areas\Workplaces\Pages\_ViewStart.cshtml" />
+    </ItemGroup>
+
+</Project>

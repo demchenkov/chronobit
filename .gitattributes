@@ -1,0 +1,55 @@
+# Normalize all text files to LF in repo, convert to CRLF on checkout for Windows
+* text=auto eol=lf
+
+# Treat C# and other source files as text
+*.cs     text diff=csharp
+*.cshtml text
+*.razor  text
+*.xaml   text
+*.config text
+*.json   text
+*.xml    text
+*.yml    text
+*.yaml   text
+*.md     text
+*.ts     text
+*.js     text
+*.css    text
+*.scss   text
+*.html   text
+
+# Binary files - do not modify line endings
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.ico    binary
+*.pdf    binary
+*.woff   binary
+*.woff2  binary
+*.ttf    binary
+*.eot    binary
+*.zip    binary
+*.dll    binary
+*.exe    binary
+*.pdb    binary
+
+# Visual Studio specific
+*.sln    text
+*.csproj text
+*.vbproj text
+*.fsproj text
+
+# Git LFS (optional) - uncomment if using Git LFS
+# *.psd filter=lfs diff=lfs merge=lfs -text
+# *.mp4 filter=lfs diff=lfs merge=lfs -text
+
+# Prevent issues with shell scripts on Linux
+*.sh     text eol=lf
+*.bash   text eol=lf
+
+# Powershell scripts - CRLF preferred on Windows, auto handled elsewhere
+*.ps1    text
+
+# Ignore merge conflicts in generated lock files
+project.lock.json merge=union
