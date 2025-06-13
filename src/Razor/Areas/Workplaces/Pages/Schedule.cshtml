@@ -1,0 +1,197 @@
+@page "{id:guid}"
+@model Razor.Areas.Workplaces.Pages.ScheduleModel
+@using Microsoft.AspNetCore.Mvc.TagHelpers
+
+@{
+    ViewData["Title"] = "Work Schedule";
+
+    var startOfWeek = Model.StartOfWeek;
+    var endOfWeek = Model.EndOfWeek;
+    var currentWeek = Enumerable.Range(0, 7).Select(offset => startOfWeek.AddDays(offset)).ToList();
+}
+
+<div class="container-fluid">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="h3 mb-2">Work Schedule</h1>
+            <p class="text-secondary mb-0">
+                Week of @startOfWeek.ToString("MMMM d") - @endOfWeek.ToString("MMMM d, yyyy")
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <div class="btn-group">
+                <button class="btn btn-outline-primary" onclick="changeWeek(-1)">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <button class="btn btn-outline-primary" onclick="changeWeek(null)">
+                    <span>Current</span>
+                </button>
+                <button class="btn btn-outline-primary" onclick="changeWeek(1)">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+            <button class="btn btn-primary" onclick="editShift(event)">
+                <i class="bi bi-plus-lg"></i> Add Shift
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="table-responsive">
+            <table class="schedule-table rounded-top">
+                <thead>
+                    <tr>
+                        <th style="min-width: 200px;">Team Member</th>
+                        <th class="text-center week-day" style="max-width: 85px">Total Hours</th>
+                        @foreach (var date in currentWeek)
+                        {
+                            <th class="text-center @(date == DateTime.Today ? "bg-primary bg-opacity-10" : "")">
+                                <div>@date.ToString("ddd")</div>
+                                <small>@date.ToString("MMM d")</small>
+                            </th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var worker in Model.Workers)
+                    {
+                        var shifts = Model.GetShiftsForWorker(worker.Id);
+                        var weeklyShifts = shifts.ToList();
+                        var totalSpan = new TimeSpan(weeklyShifts.Sum(r => r.Duration.Ticks));
+
+                        <tr class="@(worker.Id == Model.CurrentWorker.Id ? "active" : "")">
+                            <td class="align-middle">
+                                @worker.DisplayName
+                            </td>
+                            <td class="align-middle text-center" style="max-width: 85px">
+                                @totalSpan.ToString(@"hh\:mm")
+                            </td>
+                            @for (var day = startOfWeek; day <= endOfWeek; day = day.AddDays(1))
+                            {
+                                <td class="week-day" onclick="editShift(event, '@Model.GetPartialSerializedShift(day, worker.Id)')">
+                                    @foreach (var shift in weeklyShifts.Where(s => s.StartedAt.Date == day))
+                                    {
+                                        <div class="shift p-1 mb-1"
+                                             onclick="editShift(event, '@Model.GetSerializedShift(shift)')">
+                                            <div  class="d-flex flex-column small align-items-center">
+                                                <span>@shift.StartedAt.ToString("HH:mm")</span>
+                                                <span style="font-size: 0.9em;">↓</span>
+                                                <span>@shift.FinishedAt.ToString("HH:mm")</span>
+                                                <span class="text-secondary mt-2">
+                                                    🕐(@shift.Duration.ToString(@"hh\:mm"))
+                                                </span>
+                                            </div>
+                                        </div>
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Shift Modal -->
+<div class="modal fade" id="shiftModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="shiftModalTitle">Add Shift</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="shiftForm" method="post">
+                <div class="modal-body">
+                    <input type="hidden" id="shiftId" name="ShiftId">
+
+                    <div class="mb-3">
+                        <label for="workerId" class="form-label">Team Member</label>
+                        <select class="form-select" id="workerId" name="WorkerId" required>
+                            @foreach (var worker in Model.Workers)
+                            {
+                                <option value="@worker.Id">@worker.DisplayName</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="shiftDate" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="shiftDate" name="ShiftDate" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col">
+                            <label for="startTime" class="form-label">Start Time</label>
+                            <input type="time" class="form-control" id="startTime" name="StartTime" required>
+                        </div>
+                        <div class="col">
+                            <label for="endTime" class="form-label">End Time</label>
+                            <input type="time" class="form-control" id="endTime" name="EndTime" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger"
+                            id="delete-btn"
+                            asp-page-handler="delete"
+                            asp-route-id="@Model.CurrentWorkplace.Id">Delete</button>
+                    <button type="submit" class="btn btn-primary"
+                            asp-page-handler="upsert"
+                            asp-route-id="@Model.CurrentWorkplace.Id">Save Shift</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentWeekOffset = 0;
+        const shiftModal = new bootstrap.Modal(document.getElementById('shiftModal'));
+
+        function changeWeek(offset) {
+            currentWeekOffset = offset != null ? currentWeekOffset + offset : 0;
+            const url = new URL(window.location.href);
+            url.searchParams.set('weekOffset', currentWeekOffset);
+            window.location.href = url.toString();
+        }
+
+        async function editShift(event, shiftJson) {
+            try {
+                event?.preventDefault();
+                event?.stopPropagation();
+
+                const shift = JSON.parse(shiftJson);
+                const isEdit = shift?.id != null;
+
+                document.getElementById('shiftModalTitle').textContent = `${isEdit ? 'Edit' : 'Add'} Shift`;
+                if (shift.id) {
+                    document.getElementById('shiftId').value = shift.id;
+                }
+                document.getElementById('workerId').value = shift.workerId;
+                document.getElementById('workerId').readOnly = isEdit;
+                document.getElementById('delete-btn').classList[isEdit ? 'remove' : 'add']('d-none');
+
+                const date = new Date(shift.startedAt);
+                document.getElementById('shiftDate').value = date.toISOString().split('T')[0];
+                document.getElementById('startTime').value = date.toTimeString().slice(0, 5);
+
+                const endDate = new Date(shift.finishedAt);
+                document.getElementById('endTime').value = endDate.toTimeString().slice(0, 5);
+
+                shiftModal.show();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to load shift details. Please try again.');
+            }
+        }
+
+        // Initialize week offset from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        currentWeekOffset = parseInt(urlParams.get('weekOffset')) || 0;
+    </script>
+}

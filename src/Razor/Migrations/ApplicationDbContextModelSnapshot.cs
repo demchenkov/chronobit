@@ -228,7 +228,8 @@ namespace Razor.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.Property<DateTimeOffset>("FinishedAt")
                         .HasColumnType("TEXT");
@@ -236,16 +237,17 @@ namespace Razor.Migrations
                     b.Property<DateTimeOffset>("StartedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<Guid>("WorkerId")
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.Property<Guid>("WorkplaceId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("WorkerId");
 
                     b.HasIndex("WorkplaceId");
 
@@ -254,55 +256,45 @@ namespace Razor.Migrations
 
             modelBuilder.Entity("Razor.Models.Worker", b =>
                 {
-                    b.Property<Guid>("WorkplaceId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("TEXT");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.Property<ulong>("AllowedActions")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Badge")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("WorkplaceId", "UserId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Workers");
-                });
-
-            modelBuilder.Entity("Razor.Models.WorkingHour", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int>("Type")
                         .HasColumnType("INTEGER");
 
-                    b.Property<TimeSpan?>("CloseTime")
-                        .HasColumnType("TEXT");
+                    b.Property<string>("UserId")
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
-                    b.Property<int>("DayOfWeek")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<TimeSpan?>("OpenTime")
+                    b.Property<string>("WorkerName")
+                        .HasMaxLength(255)
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("WorkplaceId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("UserId");
+
                     b.HasIndex("WorkplaceId");
 
-                    b.ToTable("WorkingHours");
+                    b.ToTable("Workers");
                 });
 
             modelBuilder.Entity("Razor.Models.Workplace", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.Property<string>("Description")
                         .HasMaxLength(500)
@@ -370,9 +362,9 @@ namespace Razor.Migrations
 
             modelBuilder.Entity("Razor.Models.Shift", b =>
                 {
-                    b.HasOne("Razor.Data.ApplicationUser", null)
+                    b.HasOne("Razor.Models.Worker", "Worker")
                         .WithMany()
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("WorkerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -382,16 +374,17 @@ namespace Razor.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Worker");
+
                     b.Navigation("Workplace");
                 });
 
             modelBuilder.Entity("Razor.Models.Worker", b =>
                 {
-                    b.HasOne("Razor.Data.ApplicationUser", null)
+                    b.HasOne("Razor.Data.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Razor.Models.Workplace", "Workplace")
                         .WithMany("Workers")
@@ -399,16 +392,7 @@ namespace Razor.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Workplace");
-                });
-
-            modelBuilder.Entity("Razor.Models.WorkingHour", b =>
-                {
-                    b.HasOne("Razor.Models.Workplace", "Workplace")
-                        .WithMany()
-                        .HasForeignKey("WorkplaceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("User");
 
                     b.Navigation("Workplace");
                 });

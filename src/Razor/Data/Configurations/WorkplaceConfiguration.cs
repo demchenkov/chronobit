@@ -9,6 +9,9 @@ public class WorkplaceConfiguration : IEntityTypeConfiguration<Workplace>
   public void Configure(EntityTypeBuilder<Workplace> builder)
   {
     builder.HasKey(x => x.Id);
+
+    builder.Property(x => x.Id).UseCollation("NOCASE");
+
     builder.Property(x => x.Name).IsRequired();
     builder.Property(x => x.Description).HasMaxLength(500);
 

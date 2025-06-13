@@ -10,13 +10,17 @@ public class ShiftConfiguration : IEntityTypeConfiguration<Shift>
   {
     builder.HasKey(x => x.Id);
 
+    builder.Property(x => x.Id).UseCollation("NOCASE");
+    builder.Property(x => x.WorkerId).UseCollation("NOCASE");
+    builder.Property(x => x.WorkplaceId).UseCollation("NOCASE");
+
     builder.Property(x => x.StartedAt).IsRequired();
     builder.Property(x => x.FinishedAt).IsRequired();
 
     // Configure many-to-one relationship with User
-    builder.HasOne<ApplicationUser>()
+    builder.HasOne(x => x.Worker)
            .WithMany()
-           .HasForeignKey(x => x.UserId)
+           .HasForeignKey(x => x.WorkerId)
            .IsRequired()
            .OnDelete(DeleteBehavior.Cascade);
 

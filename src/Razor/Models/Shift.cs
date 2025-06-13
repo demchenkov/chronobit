@@ -4,7 +4,8 @@ public class Shift
 {
   public Guid Id { get; set; }
 
-  public required string UserId { get; set; }
+  public required Guid WorkerId { get; set; }
+  public Worker? Worker { get; set; }
 
   public Guid WorkplaceId { get; set; }
   public Workplace? Workplace { get; set; }

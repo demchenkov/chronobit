@@ -1,0 +1,188 @@
+@page "{id:guid}"
+@using Razor.Models
+@model Razor.Areas.Workplaces.Pages.TeamModel
+@{
+    ViewData["Title"] = "Team Management";
+}
+
+<div class="container-fluid">
+    <div class="mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <h1 class="h3 mb-0">Team Management</h1>
+            <div class="d-flex gap-2">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="teamSearch" class="form-control" placeholder="Search team members...">
+                </div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addWorkerModal">
+                    <i class="bi bi-person-plus"></i> Add Worker
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 rounded-top">
+                <thead>
+                    <tr>
+                        <th scope="col">Worker</th>
+                        @foreach (var action in Model.AllActions)
+                        {
+                            <th scope="col" class="text-center">@action.ToString()</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody id="teamTable">
+                    @foreach (var worker in Model.Workers)
+                    {
+                        var searchText = worker.Type == WorkerType.Register
+                            ? $"{worker.User?.Email} {worker.User?.FirstName} {worker.User?.LastName}"
+                            : worker.WorkerName;
+
+                        <tr data-search="@searchText">
+                            <td class="align-middle">
+                                <div class="d-flex align-items-center">
+                                    @if (worker is { Type: WorkerType.Register, User: not null })
+                                    {
+                                        if (!string.IsNullOrEmpty(worker.User.AvatarUri))
+                                        {
+                                            <img src="@worker.User.AvatarUri" class="rounded-circle me-2" width="32" height="32" alt="Avatar">
+                                        }
+                                        else
+                                        {
+                                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2"
+                                                 style="width: 32px; height: 32px;">
+                                                @(char.ToUpperInvariant(worker.User.DisplayName[0]))
+                                            </div>
+                                        }
+                                        <div>
+                                            <div class="fw-bold">@worker.User.DisplayName</div>
+                                            <small class="text-muted">
+                                                @(worker.AllowedActions.HasFlag(AdministrationAction.All) ? "Creator" : "")
+                                            </small>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2"
+                                             style="width: 32px; height: 32px;">
+                                            <i class="bi bi-person"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">@worker.WorkerName</div>
+                                            <small class="text-muted">Unregistered Worker</small>
+                                        </div>
+                                    }
+                                </div>
+                            </td>
+                            @foreach (var action in Model.AllActions)
+                            {
+                                var hasPermission = worker.AllowedActions.HasFlag(action);
+                                var disabledEditing = worker.Type is WorkerType.Unregister;
+
+                                <td class="text-center align-middle">
+                                    <form method="post" class="d-inline">
+                                        <input type="hidden" name="workerId" value="@worker.Id" />
+                                        <button type="submit"
+                                                disabled="@(disabledEditing)"
+                                                asp-page-handler="UpdateActions"
+                                                asp-route-id="@RouteData.Values["id"]"
+                                                asp-route-actions="@(hasPermission ? worker.AllowedActions & ~action : worker.AllowedActions | action)"
+                                                class="btn btn-link p-0 @(hasPermission ? "text-success" : "text-muted")"
+                                                style="font-size: 1.2rem;">
+                                            <i class="bi @(hasPermission ? "bi-check-circle-fill" : "bi-circle")"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Worker Modal -->
+<div class="modal fade" id="addWorkerModal" tabindex="-1" aria-labelledby="addWorkerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addWorkerModalLabel">Add Worker</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="AddUser" asp-route-id="@RouteData.Values["id"]">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Worker Type</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="WorkerType" id="typeRegister" value="@WorkerType.Register" checked>
+                            <label class="form-check-label" for="typeRegister">
+                                Registered User
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="WorkerType" id="typeUnregister" value="@WorkerType.Unregister">
+                            <label class="form-check-label" for="typeUnregister">
+                                Unregistered Worker
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="userGroup" class="mb-3">
+                        <label for="userId" class="form-label">User</label>
+                        <select class="form-select" id="userId" name="UserId">
+                            @foreach (var usr in Model.Users)
+                            {
+                                <option value="@usr.Id">@usr.DisplayName</option>
+                            }
+                        </select>
+                        <div class="form-text">Select a registered user</div>
+                    </div>
+
+                    <div id="nameGroup" class="mb-3 d-none">
+                        <label for="workerName" class="form-label">Worker Name</label>
+                        <input type="text" class="form-control" id="workerName" name="WorkerName">
+                        <div class="form-text">Enter a name for the unregistered worker</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Worker</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Search functionality
+        document.getElementById('teamSearch').addEventListener('input', function(e) {
+            const searchText = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#teamTable tr');
+
+            rows.forEach(row => {
+                const searchData = row.getAttribute('data-search').toLowerCase();
+                row.style.display = searchData.includes(searchText) ? '' : 'none';
+            });
+        });
+
+        // Worker type toggle
+        document.querySelectorAll('input[name="WorkerType"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const userGroup = document.getElementById('userGroup');
+                const nameGroup = document.getElementById('nameGroup');
+
+                if (this.value === '@WorkerType.Register') {
+                    userGroup.classList.remove('d-none');
+                    nameGroup.classList.add('d-none');
+                } else {
+                    userGroup.classList.add('d-none');
+                    nameGroup.classList.remove('d-none');
+                }
+            });
+        });
+    </script>
+}
